@@ -35,8 +35,12 @@ Try http://<IP_address> to see if the device has a web interface that may provid
 The LSE-3 stick logger has a web interface and provides a little information that may be useful, including the logger serial number.  The serial number is likely on a sticker on the stick logger.
 
 ## Setup this script
-- Clone the repository
-- Download required module `pymodbus` using `pip`
+
+Clone the repository and then run
+```cmd
+pip install -r requirements.txt
+```
+
 
 ## Contributing back to the community
 If you get it working, contribute back to the larger community by sharing your parameters file via a Pull Request to the Solarman integration.
@@ -50,5 +54,4 @@ If you improve on these scripts, or have better ideas on how to find the MODBUS 
 
 
 ## TODO:
-- make a requirements.txt file and instructions for setup
 - 
