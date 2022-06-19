@@ -1,10 +1,13 @@
+"""Read registers and look for changing values to help determine what each address holds."""
+
+from datetime import datetime
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.payload import BinaryPayloadDecoder
-from pymodbus.exceptions import ModbusIOException
+from pymodbus.exceptions import ModbusIOException, ConnectionException
 from pymodbus.pdu import ExceptionResponse
 
-index = 0
-num_to_try = 898
+start_address = 23
+stop_address = 808
 SIZE = 1
 UNIT=1
 
@@ -43,29 +46,40 @@ class Value:
             self.zero = 0
 
 
-def check_values(vals, index, tries):
-    while index < tries:
-        response = client.read_holding_registers(index, SIZE, unit=UNIT)
-        while response.isError():
-            response = client.read_holding_registers(index, SIZE, unit=UNIT)
+def check_values(vals, address, tries, f):
+    while address < tries:
+
+        try:
+            response = client.read_holding_registers(address, SIZE, unit=UNIT)
+        except ConnectionException:
+            client.connect()
+            return check_values(vals, address, tries, f)
+
+        if response.isError():
+            return check_values(vals, address, tries, f)
 
         bits = response.registers[0]
-        print(f"index {index}: {bits}")
+        current_datetime = datetime.now().strftime('%x %X')
 
-        if index not in vals:
-            vals[index] = Value(index, bits)
+        if address not in vals:
+            vals[address] = Value(address, bits)
+            # print initial value
+            print(f"{current_datetime}\t{address}\t{bits}", file=f)
         else:
-            vals[index].update(bits)
+            vals[address].update(bits)
+            
+        if vals[address].changed:
+            # print any changed values
+            print(f"{current_datetime}\t{address}\t{bits}", file=f)
 
-        index += SIZE
+        address += SIZE
+
+with open("changes.txt", "a") as f:
+    for x in range(1,500):
+        print(f"check values try {x}")
+        check_values(vals, start_address, stop_address, f)
 
 
-
-for x in range(1,5):
-    print(f"check values try {x}")
-    check_values(vals, index, num_to_try)
-
-
-print(f"index\t16bit\tchanged\tzero\tbyte2\tbyte1\n")
+print(f"address\t16bit\tchanged\tzero\tbyte2\tbyte1\n")
 for value in vals.values():
     print(f"{value.register}\t{value.value}\t{value.changed}\t{value.zero}\t{value.byte2}\t{value.byte1}")
