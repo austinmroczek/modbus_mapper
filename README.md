@@ -41,6 +41,14 @@ Clone the repository and then run
 pip install -r requirements.txt
 ```
 
+## The hard part - Trial and Error
+Now comes the hard part, using trial and error to figure out what the registers are.
+
+First use `scan.py` to scan the device and see what registers respond as what type.  Change the IP address to the address of your device.
+
+Now you know what registers are responding.  Assuming they are "holding registers" now use `changes.py` to read in values over time.  It creates a text file that simply lists each address and what the value is when it's read.  It uses a format that that Microsoft Excel likes, so it can be easily pasted into a spreadsheet for examination.
+
+TODO: add a lot more detail on this proces....
 
 ## Contributing back to the community
 If you get it working, contribute back to the larger community by sharing your parameters file via a Pull Request to the Solarman integration.
@@ -50,8 +58,3 @@ If you improve on these scripts, or have better ideas on how to find the MODBUS 
 ## Related work or info
 - Home Assistant HACS integration for [Solarman](https://github.com/StephanJoubert/home_assistant_solarman/)
 
-
-
-
-## TODO:
-- 
