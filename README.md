@@ -44,9 +44,23 @@ pip install -r requirements.txt
 ## The hard part - Trial and Error
 Now comes the hard part, using trial and error to figure out what the registers are.
 
-First use `scan.py` to scan the device and see what registers respond as what type.  Change the IP address to the address of your device.
+First use `scan.py` to scan the device and see what registers respond as what type.  Second user `changes.py` to read in values.
 
-Now you know what registers are responding.  Assuming they are "holding registers" now use `changes.py` to read in values over time.  It creates a text file that simply lists each address and what the value is when it's read.  It uses a format that that Microsoft Excel likes, so it can be easily pasted into a spreadsheet for examination.
+### scan.py
+
+Near the top of the `scan.py` file, change the `IP_ADDRESS` to the address of your device.  Now run the script:
+
+```cmd
+python scan.py
+```
+
+It could take a very long time (hours) to scan all of the possible addresses.  If you have information about the address range of your device, change the `start_address` or `stop_address` variables at the top of the script to save some time.
+
+Now you know what registers are responding, and as what type.  
+
+### changes.py
+
+Assuming they are "holding registers" now use `changes.py` to read in values over time.  It creates a text file that simply lists each address and what the value is when it's read.  It uses a format that that Microsoft Excel likes, so it can be easily pasted into a spreadsheet for examination.
 
 TODO: add a lot more detail on this proces....
 
