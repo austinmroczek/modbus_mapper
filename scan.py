@@ -21,15 +21,21 @@ stop_address = 9999
 SIZE = 1
 UNIT=1
 
-client = ModbusTcpClient(host="192.168.1.205", port="8899")
+# CHANGE TO YOUR ADDRESS
+IP_ADDRESS = "192.168.1.205"
+PORT = "8899"
+
+
+print(f"attempting to connect to {IP_ADDRESS} on port {PORT}")
+client = ModbusTcpClient(host=IP_ADDRESS, port=PORT)
 print(f"connection status: {client.connect()}")
 
 vals = {}
 
 class Register:
 
-    def __init__(self, new_register):
-        self.register = new_register
+    def __init__(self, new_address):
+        self.address = new_address
         self.type_holding_register = None
         self.type_input_register = None
         self.type_input_contact = None
@@ -54,7 +60,9 @@ def check_values(vals, start_address, stop_address, size):
             vals[data_address] = Register(data_address)
 
         register = vals[data_address]
-        
+
+        print(f"trying address {data_address}")
+
         if not register.type_holding_register:
             response = client.read_holding_registers(data_address, size, unit=UNIT)
             check = check_response(response)
@@ -83,9 +91,11 @@ def check_values(vals, start_address, stop_address, size):
                 continue
             register.type_status  = check
 
-        print(f"{data_address}\t{register.type_holding_register}\t{register.type_input_register}\t{register.type_input_contact}\t{register.type_status}")
         data_address += size
 
-
-print(f"\n\nAddr\tHoldReg\tInReg\tInDisc\tCoils\n")
 check_values(vals, start_address, stop_address, SIZE)
+
+# scanning is done, print out results
+print(f"\n\nAddr\tHoldReg\tInReg\tInDisc\tCoils\n")
+for register in vals:
+    print(f"{register.address}\t{register.type_holding_register}\t{register.type_input_register}\t{register.type_input_contact}\t{register.type_status}")
