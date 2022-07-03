@@ -60,9 +60,21 @@ Now you know what registers are responding, and as what type.
 
 ### changes.py
 
-Assuming they are "holding registers" now use `changes.py` to read in values over time.  It creates a text file that simply lists each address and what the value is when it's read.  It uses a format that that Microsoft Excel likes, so it can be easily pasted into a spreadsheet for examination.
+This script creates a text file that simply lists each address and what the value is when it's read.  It uses a date/time format compatible with Microsoft Excel, so it can be easily pasted into a spreadsheet for examination.  
 
-TODO: add a lot more detail on this proces....
+Change the `start_address` or `stop_address` variables at the top of the script to match what you learned from `scan.py`
+
+The script assumes your device uses "holding registers".  If your device uses something different, the script will have to be adjusted.
+
+The script creates a file called `changes.txt`.  If the file already exists, data will be appended to the end of the file.  This is useful so you can run the script many times over the course of a few days, because (given the name) you are looking for changes.
+
+Examples of types of changes you will see:
+
+- Daily counter/total: slowly adds up over the day, but resets to zero at midnight.  Could be for "daily energy produced" or some similar parameter.
+- Weekly/Monthly/Other total: slowly adds up, but resets at some interval greater than a single day.  Could be for weekly/monthly/annual/total energy produced.
+- Increasing with sun: some parameter that clearly increases in value when the sun is up, likely related to solar production.
+- Increasing with usage: some parameter associated with time of high usage, which could be at night.
+- Increasing/decreasing with a limit: something like a battery, that goes between zero and one hundred percent
 
 ## Contributing back to the community
 If you get it working, contribute back to the larger community by sharing your parameters file via a Pull Request to the Solarman integration.
