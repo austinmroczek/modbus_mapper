@@ -6,6 +6,8 @@ from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.exceptions import ModbusIOException, ConnectionException
 from pymodbus.pdu import ExceptionResponse
 
+from .common import Value
+
 start_address = 23
 stop_address = 808
 SIZE = 1
@@ -15,36 +17,6 @@ client = ModbusTcpClient(host="192.168.1.205", port="8899")
 print(f"connection status: {client.connect()}")
 
 vals = {}
-
-class Value:
-
-    def __init__(self, new_register, new_value):
-        self.register = new_register
-        self.value = 0
-        self.byte1 = 0
-        self.byte2 = 0
-        self.changed = 0
-        self.num_changes = 0
-        self.zero = 1
-        self.char1 = ""
-        self.char2 = ""
-        self._set(new_value)
-
-    def update(self, new_value):
-        if self.value != new_value:
-            self.changed = 1
-            self.num_changes += 1
-            self._set(new_value)
-
-    def _set(self, new_value):
-        self.value = new_value
-        self.byte1 = new_value & 0xff
-        self.byte2 = new_value >> 8
-        self.char1 = chr(self.byte1)
-        self.char2 = chr(self.byte2)
-        if new_value != 0:
-            self.zero = 0
-
 
 def check_values(vals, address, tries, f):
     while address < tries:
