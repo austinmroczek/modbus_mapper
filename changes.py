@@ -6,9 +6,9 @@ from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.exceptions import ModbusIOException, ConnectionException
 from pymodbus.pdu import ExceptionResponse
 
-from .common import Value
+from common import Value
 
-start_address = 23
+start_address = 0
 stop_address = 808
 SIZE = 1
 UNIT=1
