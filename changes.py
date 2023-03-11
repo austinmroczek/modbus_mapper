@@ -1,7 +1,7 @@
 """Read registers and look for changing values to help determine what each address holds."""
 
 from datetime import datetime
-from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.exceptions import ModbusIOException, ConnectionException
 from pymodbus.pdu import ExceptionResponse
@@ -12,46 +12,52 @@ start_address = 0
 stop_address = 808
 SIZE = 1
 UNIT=1
+num_values_to_read = 500
+
 
 client = ModbusTcpClient(host="192.168.1.205", port="8899")
 print(f"connection status: {client.connect()}")
 
 vals = {}
 
-def check_values(vals, address, tries, f):
-    while address < tries:
+def save_value(timestamp, address, bits, file):
+    """Save value to a file."""
+    print(f"{timestamp}\t{address}\t{bits}", file=file)
 
-        try:
-            response = client.read_holding_registers(address, SIZE, unit=UNIT)
-        except ConnectionException:
-            client.connect()
-            return check_values(vals, address, tries, f)
+def get_data(address, size):
+    """Get data from unit."""
+    try:
+        response = client.read_holding_registers(address, size, slave=UNIT)
+    except ConnectionException:
+        client.connect()
+        return get_data(address, size)
 
-        if response.isError():
-            return check_values(vals, address, tries, f)
+    if response.isError():
+        return get_data(address, size)
 
-        bits = response.registers[0]
-        current_datetime = datetime.now().strftime('%x %X')
+    return response
 
-        if address not in vals:
-            vals[address] = Value(address, bits)
-            # print initial value
-            print(f"{current_datetime}\t{address}\t{bits}", file=f)
-        else:
-            vals[address].update(bits)
-            
-        if vals[address].changed:
-            # print any changed values
-            print(f"{current_datetime}\t{address}\t{bits}", file=f)
-
-        address += SIZE
+def check_block(start_address, size, file):
+    """Check a block of values."""
+    print(f"check_block start: {start_address}, size: {size}")
+    response = get_data(start_address, size)
+    current_datetime = datetime.now().strftime('%x %X')
+ 
+    i = 0
+    for bits in response.registers:
+        save_value(current_datetime, start_address+i, bits, file)
+        i +=1
 
 with open("changes.txt", "a") as f:
-    for x in range(1,500):
+    for x in range(1,2):
         print(f"check values try {x}")
-        check_values(vals, start_address, stop_address, f)
+        check_block(0, 100, f)
+        check_block(100, 100, f)        
+        check_block(200, 100, f)        
+        check_block(300, 100, f)                
+        check_block(400, 100, f)        
+        check_block(500, 100, f)        
+        check_block(600, 100, f)        
+        check_block(700, 100, f)        
+        check_block(800, 8, f)        
 
-
-print(f"address\t16bit\tchanged\tzero\tbyte2\tbyte1\n")
-for value in vals.values():
-    print(f"{value.register}\t{value.value}\t{value.changed}\t{value.zero}\t{value.byte2}\t{value.byte1}")
