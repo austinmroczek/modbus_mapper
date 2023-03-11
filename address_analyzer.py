@@ -193,23 +193,11 @@ class AddressAnalyzer16:
 
         # TODO:  just using mean is not correct for things that fluctuate up and down...
 
-        # potential 120 volts
-        if self._is_voltage_120(self._unsigned_mean, self._unsigned_max, 1):
-            print(f"\tpotential 120 Volts at 1.0 scale")
-        if self._is_voltage_120(self._unsigned_mean, self._unsigned_max, 0.1):
-            print(f"\tpotential 120 Volts at 0.1 scale")
-        if self._is_voltage_120(self._unsigned_mean, self._unsigned_max, 0.01):
-            print(f"\tpotential 120 Volts at 0.01 scale")
-
-        if self._is_voltage_240(self._unsigned_mean, self._unsigned_max, 1):
-            print(f"\tpotential 240 Volts at 1.0 scale")
-        if self._is_voltage_240(self._unsigned_mean, self._unsigned_max, 0.1):
-            print(f"\tpotential 240 Volts at 0.1 scale")
-        if self._is_voltage_240(self._unsigned_mean, self._unsigned_max, 0.01):
-            print(f"\tpotential 240 Volts at 0.01 scale")
-
+        self._is_voltage_120()
+        self._is_voltage_240()
         self._is_pv_voltage()
-
+        self._is_battery_voltage()
+        self._is_requested_current()
 
         """
         TODO: find what fluctuates with the sun (i.e. production)
@@ -266,44 +254,42 @@ class AddressAnalyzer16:
                     self._increasing = False
                     self._decreasing = True
 
-    def _is_voltage_120(self, mean, max, scale=1):
-        """Return true if Voltage.
-        mean is the average value of the register
-        scale is the scaling factor (e.g. 1, .1, .01)
-        """
-        # looking for 120 or close to it.
-        lower = 115/scale
-        upper = 125/scale
+    def _is_voltage_120(self):
+        """Check if likely 120 volts."""
+        if self._num_unique < 5:
+            return
 
-        if max > upper:
-            return False
+        if self._percent_in_range(self._data["value"], 115, 125, 1) > .95:
+            print(f"\tpotential 120 Volts at 1.0 scale")
+        if self._percent_in_range(self._data["value"], 115, 125, .1) > .95:
+            print(f"\tpotential 120 Volts at .1 scale")
+        if self._percent_in_range(self._data["value"],  115, 125, .01) > .95:
+            print(f"\tpotential 120 Volts at .01 scale")
+        return
 
-        return mean >= lower and mean <= upper
+    def _is_voltage_240(self):
+        """Check if likely 240 volts."""
+        if self._num_unique < 5:
+            return
 
-    def _is_voltage_240(self, mean, max, scale=1):
-        """Return true if Voltage.
-        mean is the average value of the register
-        scale is the scaling factor (e.g. 1, .1, .01)
-        """
-        # looking for 120 or close to it.
-        lower = 235/scale
-        upper = 245/scale
-
-        if max > upper:
-            return False
-
-        return mean >= lower and mean <= upper        
+        if self._percent_in_range(self._data["value"], 230, 250, 1) > .95:
+            print(f"\tpotential 240 Volts at 1.0 scale")
+        if self._percent_in_range(self._data["value"], 230, 250, .1) > .95:
+            print(f"\tpotential 240 Volts at .1 scale")
+        if self._percent_in_range(self._data["value"],  230, 250, .01) > .95:
+            print(f"\tpotential 240 Volts at .01 scale")
+        return     
 
     def _is_pv_voltage(self):
         """check if PV voltage."""
         if self._num_unique < 5:
             return
 
-        if self._percent_in_range(self._data["value"], .75, 1.75, 1) > .99:
+        if self._percent_in_range(self._data["value"], .75, 2, 1) > .95:
             print(f"\tpotential PV voltage at 1.0 scale")
-        if self._percent_in_range(self._data["value"], .75, 1.75, .1) > .99:
+        if self._percent_in_range(self._data["value"], .75, 2, .1) > .95:
             print(f"\tpotential PV voltage at .1 scale")
-        if self._percent_in_range(self._data["value"],  .75, 1.75, .01) > .99:
+        if self._percent_in_range(self._data["value"],  .75, 2, .01) > .95:
             print(f"\tpotential PV voltage at .01 scale")
         return
 
@@ -312,14 +298,26 @@ class AddressAnalyzer16:
         if self._num_unique < 5:
             return
 
-        if self._percent_in_range(self._data["value"], 52, 56, 1) > .99:
+        if self._percent_in_range(self._data["value"], 46, 56, 1) > .95:
             print(f"\tpotential battery voltage at 1.0 scale")
-        if self._percent_in_range(self._data["value"], 52, 56, .1) > .99:
+        if self._percent_in_range(self._data["value"], 46, 56, .1) > .95:
             print(f"\tpotential battery voltage at .1 scale")
-        if self._percent_in_range(self._data["value"],  52, 56, .01) > .99:
+        if self._percent_in_range(self._data["value"],  46, 56, .01) > .95:
             print(f"\tpotential battery voltage at .01 scale")
         return
         
+    def _is_requested_current(self):
+        """check if 0 to 19 amps."""
+        if self._num_unique < 3:
+            return
+
+        if self._percent_in_range(self._data["value"], 0, 20, 1) > .95:
+            print(f"\tpotential requested current at 1.0 scale")
+        if self._percent_in_range(self._data["value"], 0, 20, .1) > .95:
+            print(f"\tpotential requested current at .1 scale")
+        if self._percent_in_range(self._data["value"],  0, 20, .01) > .95:
+            print(f"\tpotential requested current at .01 scale")
+        return
 
 
     def _is_hertz(self, series, mean, scale=1):
