@@ -49,7 +49,7 @@ def check_block(start_address, size, file):
         i +=1
 
 with open("changes.txt", "a") as f:
-    for x in range(1,2):
+    for x in range(1,num_values_to_read):
         print(f"check values try {x}")
         check_block(0, 100, f)
         check_block(100, 100, f)        
