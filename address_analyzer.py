@@ -21,6 +21,9 @@ class AddressAnalyzer16:
         self._increasing = None
         self._decreasing = None
         self._ascii = None
+        self._percent_increasing = 0
+        self._percent_decreasing = 0
+        self._percent_unchanged = 0
 
         self._num_unique = None
 
@@ -106,11 +109,11 @@ class AddressAnalyzer16:
         self._num_unique = self._data["value"].nunique()
         self._check_changing()
         self._check_zero()
+        self._calculate_percent_changes()
+
 
         if self.is_zero():
             return
-
-        # what about fixed ?
 
         if self.is_changing():
             self._check_increasing_decreasing()
@@ -143,7 +146,15 @@ class AddressAnalyzer16:
             #don't print fixed
             return
 
-        print(f"Address {self._address}: min {self._unsigned_min:5d}\tmean {self._unsigned_mean:7.1f}\tmedian {self._unsigned_median:7.1f}\tmax {self._unsigned_max:5d}\tunique: {self._num_unique:5d}")
+        if self._num_unique < 10:
+            return
+
+        print(
+            f"Address {self._address}: min {self._unsigned_min:5d}\t"
+            f"mean {self._unsigned_mean:7.1f}\tmedian {self._unsigned_median:7.1f}\t"
+            f"max {self._unsigned_max:5d}\tunique: {self._num_unique:5d}\t"
+            f"vals inc/dec/same {self._percent_increasing:>4.0%}{self._percent_decreasing:>4.0%}{self._percent_unchanged:>4.0%}"
+        )
 
         if self.is_increasing():
             print(f"\tincreasing")
@@ -222,6 +233,7 @@ class AddressAnalyzer16:
 
 
         self._daily_pattern()
+        self._monthly_pattern()
 
         # TODO: fixed ranges
 
@@ -253,6 +265,40 @@ class AddressAnalyzer16:
                 if self._data["value"].is_monotonic_decreasing:
                     self._increasing = False
                     self._decreasing = True
+
+    def _calculate_percent_changes(self):
+        """Calculate the percent of value changes that are increasing/decreasing/neither."""
+        if self.is_zero():
+            self._percent_unchanged = 1
+            self._percent_increasing = 0
+            self._percent_decreasing = 0
+            return
+
+        num_increasing = 0
+        num_decreasing = 0
+        num_unchanged = 0
+        previous_value = None
+
+        for value in self._data["value"]:
+            if previous_value is None:
+                # first time, so can't calculate
+                previous_value = value
+                continue
+
+            if value == previous_value:
+                num_unchanged +=1
+            elif value > previous_value:
+                num_increasing +=1
+            else:
+                num_decreasing +=1
+
+            previous_value = value
+
+        # calculate percentages
+        total = num_decreasing + num_increasing + num_unchanged
+        self._percent_unchanged = num_unchanged / total
+        self._percent_increasing = num_increasing / total
+        self._percent_decreasing = num_decreasing / total
 
     def _is_voltage_120(self):
         """Check if likely 120 volts."""
@@ -408,8 +454,8 @@ class AddressAnalyzer16:
 
         self._daily_increasing(hourly)
         self._daily_with_sun(hourly)
-        self._daily_with_sun2(hourly)
-        self._daily_with_sun3(hourly)
+        if self._no_increase_before_sunrise(hourly) and self._no_increase_after_sunset(hourly):
+            print("does not increase before sunrise or after sunset")
 
         self._daily_decreases_without_sun(hourly)
 
@@ -459,16 +505,12 @@ class AddressAnalyzer16:
         print("\tseems to increase with the sun")
         return True
 
-    def _daily_with_sun2(self, hourly):
-        """Return true if seems to increase with sun."""
-        # if 5am value is same as midnight,
-        print("\tno increase from midnight to 5am")
+    def _no_increase_before_sunrise(self, hourly):
+        """Return true if no increase before sunrise."""
         return hourly[4] == hourly[0]
 
-    def _daily_with_sun3(self, hourly):
+    def _no_increase_after_sunset(self, hourly):
         """Return true if seems to increase with sun."""
-        # if 5am value is same as midnight,
-        print("\tno increase from 10pm-midnight")
         return hourly[23] == hourly[22]
 
     def _daily_decreases_without_sun(self, hourly):
@@ -504,6 +546,43 @@ class AddressAnalyzer16:
 
         print(f"fft: {result[0]:5.1f}\t{result[1]:5.1f}\t{result[2]:5.1f}\t{result[3]:5.1f}")
         return True
+
+
+    def _monthly_pattern(self):
+        """Analyze monthly pattern."""
+        if not self.is_changing() or self._num_unique < 10:
+            return False
+
+        daily = []
+        # create a list of mean for each hour of the day
+        for day in range(31):
+            day_data = self._data[self._data["day"] == day + 1]
+            mean = day_data["value"].mean()
+            daily.append(mean)
+
+        self._monthly_increasing(daily)
+
+        return True
+
+    def _monthly_increasing(self, daily):
+        """Return true if increases monthly (from day 1 to day 31)."""
+
+        # NOTE: can't test every single day since production fluctuates
+
+        # TODO: this only works if lots of data being analyzed
+
+        if daily[0] >= daily[10]:
+            return False
+        
+        if daily[10] >= daily[20]:
+            return False
+
+        if daily[20] >= daily[30]:
+            return False
+
+        print("\tincreases monthly from day 1 to day 31")
+        return True
+
 
 
     """
